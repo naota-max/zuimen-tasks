@@ -85,16 +85,17 @@ function openMailto({ subject, body, emails }) {
   return true;
 }
 
-function buildMail(task, type) {
+function buildMail(task, type, signature="") {
   const descs = [...task.descs, ...(task.customDesc?[task.customDesc]:[])].join("、");
   const assignee = task.assignee || "未定";
   const requester = task.requester || "―";
   const due = task.due || "未設定";
   const now = nowStr();
-  if (type === "new") return { subject:`【図面タスク新規】${task.title}`, body:`${assignee} さん\n\n以下のタスクが登録されました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼・確認者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n■ ステータス：${task.status}${task.memo?`\n■ メモ：${task.memo}`:""}\n\n登録日時：${now}\n\nよろしくお願いします。` };
-  if (type === "relay") return { subject:`【引継ぎ依頼】${task.title}`, body:`${assignee} さん\n\n以下のタスクの引継ぎをお願いします。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼・確認者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}${task.memo?`\n■ 引継ぎメモ：${task.memo}`:""}\n\n引継ぎ日時：${now}\n\nよろしくお願いします。` };
-  if (type === "status") return { subject:`【ステータス変更】${task.title}`, body:`${assignee} さん\n\n以下のタスクのステータスが変更されました。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 担当者：${assignee}\n■ 依頼・確認者：${requester}\n■ ステータス：${task.status}\n■ 期日：${due}\n\n更新日時：${now}\n\nよろしくお願いします。` };
-  if (type === "complete") return { subject:`【完了報告】${task.title}`, body:`${requester} さん\n\n以下のタスクが完了しました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 担当者：${assignee}\n■ 完了日時：${now}\n\nよろしくお願いします。` };
+  const sig = signature ? `\n\n--\n${signature}` : "";
+  if (type === "new") return { subject:`【図面タスク新規】${task.title}`, body:`${assignee} さん\n\n以下のタスクが登録されました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n■ ステータス：${task.status}${task.memo?`\n■ メモ：${task.memo}`:""}\n\n登録日時：${now}\n\nよろしくお願いします。${sig}` };
+  if (type === "relay") return { subject:`【引継ぎ依頼】${task.title}`, body:`${assignee} さん\n\n以下のタスクの引継ぎをお願いします。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}${task.memo?`\n■ 引継ぎメモ：${task.memo}`:""}\n\n引継ぎ日時：${now}\n\nよろしくお願いします。${sig}` };
+  if (type === "status") return { subject:`【ステータス変更】${task.title}`, body:`${assignee} さん\n\n以下のタスクのステータスが変更されました。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 担当者：${assignee}\n■ 依頼者：${requester}\n■ ステータス：${task.status}\n■ 期日：${due}\n\n更新日時：${now}\n\nよろしくお願いします。${sig}` };
+  if (type === "complete") return { subject:`【完了報告】${task.title}`, body:`${requester} さん\n\n以下のタスクが完了しました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 担当者：${assignee}\n■ 完了日時：${now}\n\nよろしくお願いします。${sig}` };
   return { subject:"", body:"" };
 }
 
@@ -153,8 +154,9 @@ function DeleteConfirm({ task, onConfirm, onCancel }) {
   );
 }
 
-function EmailSettingsModal({ requesters, assignees, emails, onSave, onClose }) {
+function EmailSettingsModal({ requesters, assignees, emails, signature, onSave, onSaveSignature, onClose }) {
   const [local, setLocal] = useState({...emails});
+  const [localSig, setLocalSig] = useState(signature||"");
   const allNames = [...assignees, ...requesters.filter(r=>!assignees.includes(r))];
   const set = (name, val) => setLocal(e=>({...e,[name]:val}));
   const registered = allNames.filter(n=>local[n]&&local[n].includes("@")).length;
@@ -177,7 +179,7 @@ function EmailSettingsModal({ requesters, assignees, emails, onSave, onClose }) 
           ))}
         </div>
         <div style={{marginBottom:20}}>
-          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",marginBottom:8}}>依頼・確認者</div>
+          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",marginBottom:8}}>依頼者</div>
           {requesters.map(name=>(
             <div key={name} style={{display:"grid",gridTemplateColumns:"80px 1fr",gap:10,alignItems:"center",marginBottom:8}}>
               <div style={{fontWeight:700,fontSize:13,color:"#0f172a"}}>{name}</div>
@@ -185,17 +187,22 @@ function EmailSettingsModal({ requesters, assignees, emails, onSave, onClose }) 
             </div>
           ))}
         </div>
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",marginBottom:8}}>署名</div>
+          <textarea style={{...inp,minHeight:80,resize:"vertical"}} value={localSig} onChange={e=>setLocalSig(e.target.value)} placeholder={"例：\n株式会社〇〇\n担当：山田太郎\nTEL: 03-XXXX-XXXX"} />
+          <div style={{fontSize:11,color:"#94a3b8",marginTop:4}}>メール本文の末尾に自動で追加されます</div>
+        </div>
         <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
           <button onClick={onClose} style={{background:"#f1f5f9",color:"#475569",border:"none",borderRadius:10,padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>キャンセル</button>
-          <button onClick={()=>{onSave(local);onClose();}} style={{background:"linear-gradient(135deg,#3b82f6,#6366f1)",color:"white",border:"none",borderRadius:10,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>保存する</button>
+          <button onClick={()=>{onSave(local);onSaveSignature(localSig);onClose();}} style={{background:"linear-gradient(135deg,#3b82f6,#6366f1)",color:"white",border:"none",borderRadius:10,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>保存する</button>
         </div>
       </div>
     </div>
   );
 }
 
-function SendConfirmModal({ task, type, emails, onClose }) {
-  const { subject, body } = buildMail(task, type);
+function SendConfirmModal({ task, type, emails, signature, onClose }) {
+  const { subject, body } = buildMail(task, type, signature);
   const allEmails = Object.values(emails).filter(e=>e&&e.includes("@"));
   const noEmail = allEmails.length === 0;
   const [sent, setSent] = useState(false);
@@ -261,7 +268,7 @@ function TaskModal({ initial, requesters, assignees, onSave, onClose }) {
           <input style={inp} value={form.customDesc} onChange={e=>set("customDesc",e.target.value)} placeholder="その他・備考を自由入力..." />
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
-          <div><label style={lbl}>依頼・確認者</label><select style={inp} value={form.requester} onChange={e=>set("requester",e.target.value)}><option value="">―</option>{requesters.map(r=><option key={r}>{r}</option>)}</select></div>
+          <div><label style={lbl}>依頼者</label><select style={inp} value={form.requester} onChange={e=>set("requester",e.target.value)}><option value="">―</option>{requesters.map(r=><option key={r}>{r}</option>)}</select></div>
           <div><label style={lbl}>担当者</label><select style={inp} value={form.assignee} onChange={e=>set("assignee",e.target.value)}><option value="">未定</option>{assignees.map(a=><option key={a}>{a}</option>)}</select></div>
         </div>
         {assigneeChanged && (
@@ -339,6 +346,7 @@ export default function App() {
   const [requesters, setRequesters] = useState(INIT_REQUESTERS);
   const [assignees,  setAssignees]  = useState(INIT_ASSIGNEES);
   const [emails,     setEmails]     = useState(INIT_EMAILS);
+  const [signature,  setSignature]  = useState("");
 
   const [showModal,         setShowModal]         = useState(false);
   const [editTask,          setEditTask]           = useState(null);
@@ -614,9 +622,9 @@ export default function App() {
 
       {showModal         && <TaskModal initial={editTask} requesters={requesters} assignees={assignees} onSave={handleSave} onClose={()=>{setShowModal(false);setEditTask(null);}} />}
       {delTarget         && <DeleteConfirm task={delTarget} onConfirm={doDelete} onCancel={()=>setDelTarget(null)} />}
-      {pendingMail       && <SendConfirmModal task={pendingMail.task} type={pendingMail.type} emails={emails} onClose={()=>setPendingMail(null)} />}
-      {showEmailSettings && <EmailSettingsModal requesters={requesters} assignees={assignees} emails={emails} onSave={setEmails} onClose={()=>setShowEmailSettings(false)} />}
-      {masterModal==="requester" && <MasterModal title="依頼・確認者" items={requesters} onAdd={v=>setRequesters(r=>[...r,v])} onRemove={v=>setRequesters(r=>r.filter(x=>x!==v))} onClose={()=>setMasterModal(null)} />}
+      {pendingMail       && <SendConfirmModal task={pendingMail.task} type={pendingMail.type} emails={emails} signature={signature} onClose={()=>setPendingMail(null)} />}
+      {showEmailSettings && <EmailSettingsModal requesters={requesters} assignees={assignees} emails={emails} signature={signature} onSave={setEmails} onSaveSignature={setSignature} onClose={()=>setShowEmailSettings(false)} />}
+      {masterModal==="requester" && <MasterModal title="依頼者" items={requesters} onAdd={v=>setRequesters(r=>[...r,v])} onRemove={v=>setRequesters(r=>r.filter(x=>x!==v))} onClose={()=>setMasterModal(null)} />}
       {masterModal==="assignee"  && <MasterModal title="担当者" items={assignees} onAdd={v=>setAssignees(a=>[...a,v])} onRemove={v=>setAssignees(a=>a.filter(x=>x!==v))} onClose={()=>setMasterModal(null)} />}
     </div>
   );
