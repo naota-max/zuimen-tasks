@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 
 const INIT_REQUESTERS = ["友田","野村","三好","大北","水田","吉田","小坂","加藤宝","加藤敏"];
-const INIT_ASSIGNEES  = ["辻","星","江川"];
+const INIT_ASSIGNEES  = ["星","江川"];
 const INIT_EMAILS = {};
 
 const PRIORITIES  = ["高","中","低"];
@@ -44,6 +44,7 @@ function rowToTask(r) {
     archived: r.archived || false,
     relayedFrom: r.relayed_from || "",
     relayedAt: r.relayed_at || "",
+    relayHistory: r.relay_history || [],
   };
 }
 
@@ -61,6 +62,7 @@ function taskToRow(t) {
     memo: t.memo,
     archived: t.archived,
     relayed_from: t.relayedFrom || "",
+    relay_history: t.relayHistory || [],
   };
 }
 
@@ -93,7 +95,7 @@ function buildMail(task, type, signature="") {
   const now = nowStr();
   const sig = signature ? `\n\n${signature}` : "";  // -- を削除
   if (type === "new") return { subject:`【図面タスク新規】${task.title}`, body:`${assignee} さん\n\n以下のタスクが登録されました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n■ ステータス：${task.status}${task.memo?`\n■ メモ：${task.memo}`:""}\n\n登録日時：${now}\n\nよろしくお願いします。${sig}` };
-  if (type === "relay") return { subject:`【引継ぎ】${task.title}`, body:`お疲れ様です。\n\n本日の作業を引継ぎします。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n\n【ここまで完了しました】\n${task.memo||"（記載なし）"}\n\n【ここからお願いします】\n続きの対応をお願いします。\n\n引継ぎ日時：${now}\n引継ぎ元：${task.relayedFrom||task.assignee||"―"}\n\nよろしくお願いします。${sig}` };
+  if (type === "relay") return { subject:`【引継ぎ】${task.title}`, body:`お疲れ様です。\n\n本日の作業状況をご共有します。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n\n【ここまで完了しました】\n${task.memo||"（記載なし）"}\n\n【続きをお願いできる方へ】\n上記の続きからご対応をお願いします。\n\n引継ぎ日時：${now}\n対応者：${assignee}\n\nよろしくお願いします。${sig}` };
   if (type === "status") return { subject:`【ステータス変更】${task.title}`, body:`${assignee} さん\n\n以下のタスクのステータスが変更されました。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 対応者：${assignee}\n■ 依頼者：${requester}\n■ ステータス：${task.status}\n■ 期日：${due}\n\n更新日時：${now}\n\nよろしくお願いします。${sig}` };
   if (type === "complete") return { subject:`【完了報告】${task.title}`, body:`${requester} さん\n\n以下のタスクが完了しました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 対応者：${assignee}\n■ 完了日時：${now}\n\nよろしくお願いします。${sig}` };
   return { subject:"", body:"" };
@@ -405,7 +407,19 @@ function TaskCard({ task, assignees, onDoubleClick, onDeleteClick, onStatusChang
       </div>
       {allDescs.length>0 && <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>{allDescs.map((d,i)=><Chip key={i} label={d} />)}</div>}
       {task.memo && task.status==="作成・修正中" && <div style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#92400e",marginBottom:8,lineHeight:1.5}}>📝 {task.memo}</div>}
-      {task.relayedFrom && <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:"5px 10px",fontSize:11,color:"#0369a1",marginBottom:8}}>🔁 {task.relayedFrom} から引継ぎ{task.relayedAt?` （${task.relayedAt}）`:""}</div>}
+      {task.relayedFrom && <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:"5px 10px",fontSize:11,color:"#0369a1",marginBottom:8}}>🔁 {task.relayedFrom} → {task.assignee||"未定"}{task.relayedAt?` （${task.relayedAt}）`:""}</div>}
+      {task.relayHistory && task.relayHistory.length > 1 && (
+        <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#64748b",marginBottom:8}}>
+          <div style={{fontWeight:700,marginBottom:3}}>引継ぎ履歴</div>
+          {task.relayHistory.map((h,i)=>(
+            <div key={i} style={{display:"flex",gap:4,alignItems:"center",marginBottom:2}}>
+              <span style={{color:h.continued?"#16a34a":"#ea580c"}}>{h.continued?"✅":"🔁"}</span>
+              <span style={{fontWeight:700}}>{h.from} → {h.to}</span>
+              <span style={{color:"#94a3b8",fontSize:10}}>{h.at}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:6,marginBottom:9}}>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
           <Avatar name={task.assignee} assignees={assignees} size={24} />
@@ -538,13 +552,16 @@ export default function App() {
   const handleRelay = async (myself, memo) => {
     if (!relayTarget) return;
     const now = nowStr();
+    const from = relayTarget.assignee || "未定";
+    const newHistory = [...(relayTarget.relayHistory||[]), { from, to: myself, at: now, memo }];
     await supabase.from('tasks').update({
       assignee: myself,
       memo: memo,
-      relayed_from: relayTarget.assignee || "未定",
+      relayed_from: from,
       relayed_at: now,
+      relay_history: newHistory,
     }).eq('id', relayTarget.id);
-    const updated = {...relayTarget, assignee: myself, memo, relayedFrom: relayTarget.assignee||"未定"};
+    const updated = {...relayTarget, assignee: myself, memo, relayedFrom: from, relayedAt: now, relayHistory: newHistory};
     setPendingMail({ task: updated, type: "relay" });
     setRelayTarget(null);
   };
@@ -552,11 +569,14 @@ export default function App() {
   const handleContinue = async (myself, memo) => {
     if (!relayTarget) return;
     const now = nowStr();
+    const from = relayTarget.assignee || "未定";
+    const newHistory = [...(relayTarget.relayHistory||[]), { from, to: myself, at: now, memo, continued: true }];
     await supabase.from('tasks').update({
       assignee: myself,
       memo: memo,
-      relayed_from: relayTarget.assignee || "未定",
+      relayed_from: from,
       relayed_at: now,
+      relay_history: newHistory,
     }).eq('id', relayTarget.id);
     setRelayTarget(null);
   };
