@@ -205,22 +205,23 @@ function EmailSettingsModal({ requesters, assignees, emails, signature, onSave, 
 }
 
 function SendConfirmModal({ task, type, emails, signature, onClose }) {
-  const { subject, body } = buildMail(task, type, signature);
+  const { subject: initSubject, body: initBody } = buildMail(task, type, signature);
   const allEmailEntries = Object.entries(emails).filter(([,v])=>v&&v.includes("@"));
   const noEmail = allEmailEntries.length === 0;
-  // デフォルトは全員未選択
   const [selected, setSelected] = useState(() => Object.fromEntries(allEmailEntries.map(([k])=>[k,false])));
+  const [editSubject, setEditSubject] = useState(initSubject);
+  const [editBody, setEditBody] = useState(initBody);
   const [sent, setSent] = useState(false);
   const TYPE_LABELS = { new:"新規作成通知", relay:"引継ぎ依頼", status:"ステータス変更通知", complete:"完了報告" };
-  const ta = {padding:"11px 13px",borderRadius:10,border:"1.5px solid #e2e8f0",fontSize:12,color:"#1e293b",outline:"none",fontFamily:"monospace",background:"#f8fafc",width:"100%",boxSizing:"border-box",resize:"vertical",lineHeight:1.7};
+  const ta = {padding:"11px 13px",borderRadius:10,border:"1.5px solid #e2e8f0",fontSize:12,color:"#1e293b",outline:"none",fontFamily:"monospace",background:"white",width:"100%",boxSizing:"border-box",resize:"vertical",lineHeight:1.7};
+  const inp = {padding:"8px 12px",borderRadius:8,border:"1.5px solid #e2e8f0",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"inherit",background:"white",width:"100%",boxSizing:"border-box"};
 
   const selectedEmails = allEmailEntries.filter(([k])=>selected[k]).map(([,v])=>v);
-  // 複数選択時はカンマ区切り（BCCなし）
   const to = selectedEmails.join(",");
 
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.55)",zIndex:250,display:"flex",alignItems:"center",justifyContent:"center",padding:16,backdropFilter:"blur(3px)"}} onClick={onClose}>
-      <div style={{background:"white",borderRadius:20,padding:26,width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 80px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
+      <div style={{background:"white",borderRadius:20,padding:26,width:"100%",maxWidth:540,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 80px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
           <div style={{fontWeight:900,fontSize:16,color:"#0f172a"}}>✉️ {TYPE_LABELS[type]}</div>
           <button onClick={onClose} style={{background:"#f1f5f9",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:14,color:"#64748b",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
@@ -241,18 +242,18 @@ function SendConfirmModal({ task, type, emails, signature, onClose }) {
           </div>
         )}
         <div style={{marginBottom:10}}>
-          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",marginBottom:4}}>件名</div>
-          <div style={{padding:"8px 12px",background:"#f8fafc",borderRadius:8,fontSize:13,fontWeight:700,color:"#0f172a",border:"1px solid #e2e8f0"}}>{subject}</div>
+          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",marginBottom:4}}>件名（編集可）</div>
+          <input style={inp} value={editSubject} onChange={e=>setEditSubject(e.target.value)} />
         </div>
         <div style={{marginBottom:18}}>
-          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",marginBottom:4}}>本文</div>
-          <textarea style={{...ta,minHeight:200}} readOnly value={body} />
+          <div style={{fontSize:11,fontWeight:800,color:"#94a3b8",marginBottom:4}}>本文（編集可）</div>
+          <textarea style={{...ta,minHeight:220}} value={editBody} onChange={e=>setEditBody(e.target.value)} />
         </div>
         {sent && <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"9px 13px",marginBottom:14,fontSize:13,color:"#15803d",fontWeight:700}}>✓ メールアプリが開きました。</div>}
         <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
           <button onClick={onClose} style={{background:"#f1f5f9",color:"#475569",border:"none",borderRadius:10,padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>閉じる</button>
           {!noEmail && selectedEmails.length>0 && (
-            <button onClick={()=>{openMailto({subject,body,to});setSent(true);}} style={{background:sent?"#22c55e":"linear-gradient(135deg,#3b82f6,#6366f1)",color:"white",border:"none",borderRadius:10,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit",minWidth:140}}>
+            <button onClick={()=>{openMailto({subject:editSubject,body:editBody,to});setSent(true);}} style={{background:sent?"#22c55e":"linear-gradient(135deg,#3b82f6,#6366f1)",color:"white",border:"none",borderRadius:10,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit",minWidth:140}}>
               {sent?"✓ 起動済み":"📨 メールアプリで開く"}
             </button>
           )}
