@@ -94,10 +94,11 @@ function buildMail(task, type, signature="") {
   const due = task.due || "未設定";
   const now = nowStr();
   const sig = signature ? `\n\n${signature}` : "";  // -- を削除
-  if (type === "new") return { subject:`【図面タスク新規】${task.title}`, body:`${assignee} さん\n\n以下のタスクが登録されました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n■ ステータス：${task.status}${task.memo?`\n■ メモ：${task.memo}`:""}\n\n登録日時：${now}\n\nよろしくお願いします。${sig}` };
-  if (type === "relay") return { subject:`【引継ぎ】${task.title}`, body:`お疲れ様です。\n\n本日の作業状況をご共有します。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n\n${task.memo||"（記載なし）"}\n\n【続きをお願いできる方へ】\n上記の続きからご対応をお願いします。\n\n対応者：${assignee}\n\nよろしくお願いします。${sig}` };
-  if (type === "status") return { subject:`【ステータス変更】${task.title}`, body:`${assignee} さん\n\n以下のタスクのステータスが変更されました。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 対応者：${assignee}\n■ 依頼者：${requester}\n■ ステータス：${task.status}\n■ 期日：${due}\n\n更新日時：${now}\n\nよろしくお願いします。${sig}` };
-  if (type === "complete") return { subject:`【完了報告】${task.title}`, body:`${requester} さん\n\n以下のタスクが完了しました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 対応者：${assignee}\n■ 完了日時：${now}\n\nよろしくお願いします。${sig}` };
+  const APP_URL = "https://zumen-tasks.vercel.app";
+  if (type === "new") return { subject:`【図面タスク新規】${task.title}`, body:`${assignee} さん\n\n以下のタスクが登録されました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n■ ステータス：${task.status}${task.memo?`\n■ メモ：${task.memo}`:""}\n\n登録日時：${now}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
+  if (type === "relay") return { subject:`【引継ぎ】${task.title}`, body:`お疲れ様です。\n\n本日の作業状況をご共有します。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n\n${task.memo||"（記載なし）"}\n\n【続きをお願いできる方へ】\n上記の続きからご対応をお願いします。\n\n対応者：${assignee}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
+  if (type === "status") return { subject:`【ステータス変更】${task.title}`, body:`${assignee} さん\n\n以下のタスクのステータスが変更されました。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 対応者：${assignee}\n■ 依頼者：${requester}\n■ ステータス：${task.status}\n■ 期日：${due}\n\n更新日時：${now}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
+  if (type === "complete") return { subject:`【完了報告】${task.title}`, body:`${requester} さん\n\n以下のタスクが完了しました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 対応者：${assignee}\n■ 完了日時：${now}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
   return { subject:"", body:"" };
 }
 
