@@ -390,6 +390,29 @@ function RelayModal({ task, assignees, onRelay, onContinue, onClose }) {
   );
 }
 
+function MemoBlock({ memo, relayedFrom, relayedAt, assignee }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{marginBottom:8}}>
+      <div
+        onClick={e=>{e.stopPropagation();setOpen(v=>!v);}}
+        style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#92400e",lineHeight:1.5,cursor:"pointer",display:"flex",alignItems:"flex-start",gap:6}}
+        title="クリックで引継ぎ情報を表示">
+        <span>📝</span>
+        <span style={{flex:1}}>{memo}</span>
+        {relayedFrom && <span style={{fontSize:10,color:"#b45309",flexShrink:0}}>{open?"▲":"▼"}</span>}
+      </div>
+      {open && relayedFrom && (
+        <div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:"0 0 8px 8px",padding:"7px 10px",fontSize:11,color:"#92400e",marginTop:-2}}>
+          <div style={{fontWeight:800,marginBottom:3}}>🔁 引継ぎ情報</div>
+          <div><span style={{fontWeight:700}}>{relayedFrom}</span> → <span style={{fontWeight:700}}>{assignee||"未定"}</span></div>
+          {relayedAt && <div style={{color:"#b45309",marginTop:2}}>{relayedAt}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RelayHistoryBlock({ history }) {
   const [expanded, setExpanded] = useState(false);
   const reversed = [...history].reverse();
@@ -438,7 +461,9 @@ function TaskCard({ task, assignees, onDoubleClick, onDeleteClick, onStatusChang
         </div>
       </div>
       {allDescs.length>0 && <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>{allDescs.map((d,i)=><Chip key={i} label={d} />)}</div>}
-      {task.memo && task.status==="作成・修正中" && <div style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#92400e",marginBottom:8,lineHeight:1.5}}>📝 {task.memo}</div>}
+      {task.memo && task.status==="作成・修正中" && (
+        <MemoBlock memo={task.memo} relayedFrom={task.relayedFrom} relayedAt={task.relayedAt} assignee={task.assignee} />
+      )}
       {task.relayedFrom && <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:"5px 10px",fontSize:11,color:"#0369a1",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
         <span>🔁</span>
         <span style={{fontWeight:800}}>{task.assignee||"未定"}</span>
