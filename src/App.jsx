@@ -97,9 +97,9 @@ function buildMail(task, type, signature="") {
   const sig = signature ? `\n\n${signature}` : "";  // -- を削除
   const APP_URL = "https://zumen-tasks.vercel.app";
   if (type === "new") return { subject:`【図面タスク新規】${task.title}`, body:`${assignee} さん\n\n以下のタスクが登録されました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n■ ステータス：${task.status}${task.memo?`\n■ メモ：${task.memo}`:""}\n\n登録日時：${now}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
-  if (type === "relay") return { subject:`【引継ぎ】${task.title}`, body:`お疲れ様です。\n\n本日の作業状況をご共有します。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n\n${task.memo||"（記載なし）"}\n\n【続きをお願いできる方へ】\n上記の続きからご対応をお願いします。\n\n対応者：${assignee}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
-  if (type === "status") return { subject:`【ステータス変更】${task.title}`, body:`${assignee} さん\n\n以下のタスクのステータスが変更されました。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 対応者：${assignee}\n■ 依頼者：${requester}\n■ ステータス：${task.status}\n■ 期日：${due}\n\n更新日時：${now}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
-  if (type === "complete") return { subject:`【完了報告】${task.title}`, body:`${requester} さん\n\n以下のタスクが完了しました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 対応者：${assignee}\n■ 完了日時：${now}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
+  if (type === "relay") return { subject:`【引継ぎ】${task.title}`, body:`お疲れ様です。\n\n本日の作業状況をご共有します。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ 依頼者：${requester}\n■ 優先度：${task.priority}\n■ 期日：${due}\n\n${task.memo||"（記載なし）"}\n\n【続きをお願いできる方へ】\n上記の続きからご対応をお願いします。\n\n${assignee}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
+  if (type === "status") return { subject:`【ステータス変更】${task.title}`, body:`${assignee} さん\n\n以下のタスクのステータスが変更されました。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ ${assignee}\n■ 依頼者：${requester}\n■ ステータス：${task.status}\n■ 期日：${due}\n\n更新日時：${now}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
+  if (type === "complete") return { subject:`【完了報告】${task.title}`, body:`${requester} さん\n\n以下のタスクが完了しました。ご確認ください。\n\n■ 件名：${task.title}\n■ 図面種別：${descs}\n■ ${assignee}\n■ 完了日時：${now}\n\n図面タスク管理：${APP_URL}\n\nよろしくお願いします。${sig}` };
   return { subject:"", body:"" };
 }
 
@@ -347,7 +347,7 @@ function TaskModal({ initial, requesters, assignees, onSave, onClose }) {
 // ── 引継ぎ専用モーダル ──
 function RelayModal({ task, assignees, onRelay, onContinue, onClose }) {
   const [myself, setMyself] = useState("");
-  const [memo, setMemo] = useState(task.memo||"");
+  const [memo, setMemo] = useState("");
   const inp = {padding:"9px 12px",borderRadius:10,border:"1.5px solid #e2e8f0",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"inherit",background:"#f8fafc",width:"100%",boxSizing:"border-box"};
   const lbl = {fontSize:11,fontWeight:800,color:"#64748b",marginBottom:5,display:"block"};
   return (
