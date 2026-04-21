@@ -344,47 +344,84 @@ function TaskModal({ initial, requesters, assignees, onSave, onClose }) {
   );
 }
 
-// ── 引継ぎ専用モーダル ──
-function RelayModal({ task, assignees, onRelay, onContinue, onClose }) {
+// ── 進捗モーダル ──
+function ProgressModal({ task, assignees, onRelay, onContinue, onClose }) {
+  const [step, setStep] = useState("select"); // "select" | "continue" | "relay"
   const [myself, setMyself] = useState("");
   const [memo, setMemo] = useState("");
   const inp = {padding:"9px 12px",borderRadius:10,border:"1.5px solid #e2e8f0",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"inherit",background:"#f8fafc",width:"100%",boxSizing:"border-box"};
   const lbl = {fontSize:11,fontWeight:800,color:"#64748b",marginBottom:5,display:"block"};
+
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.55)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16,backdropFilter:"blur(3px)"}} onClick={onClose}>
-      <div style={{background:"white",borderRadius:20,padding:28,width:"100%",maxWidth:480,boxShadow:"0 24px 80px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
+      <div style={{background:"white",borderRadius:20,padding:28,width:"100%",maxWidth:440,boxShadow:"0 24px 80px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-          <div style={{fontWeight:900,fontSize:17,color:"#0f172a"}}>🔁 引継ぎ</div>
+          <div style={{fontWeight:900,fontSize:17,color:"#0f172a"}}>📊 進捗報告</div>
           <button onClick={onClose} style={{background:"#f1f5f9",border:"none",borderRadius:8,width:32,height:32,cursor:"pointer",fontSize:16,color:"#64748b",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
         </div>
-        <div style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:"#92400e"}}>
-          現在の対応：<strong>{task.assignee||"未定"}</strong>
-        </div>
 
-        <div style={{marginBottom:14}}>
-          <label style={lbl}>自分の名前 *</label>
-          <select style={inp} value={myself} onChange={e=>setMyself(e.target.value)}>
-            <option value="">選択してください</option>
-            {assignees.map(a=><option key={a} value={a}>{a}</option>)}
-          </select>
-        </div>
+        {/* ステップ1：選択 */}
+        {step==="select" && (
+          <>
+            <div style={{fontSize:13,color:"#64748b",marginBottom:20}}>「{task.title}」の進捗を報告してください。</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <button onClick={()=>setStep("continue")}
+                style={{background:"#f0fdf4",border:"2px solid #86efac",borderRadius:12,padding:"16px 20px",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}}>
+                <div style={{fontWeight:800,fontSize:14,color:"#16a34a",marginBottom:4}}>✅ 引き続き作業します</div>
+                <div style={{fontSize:12,color:"#64748b"}}>自分が続けて対応します</div>
+              </button>
+              <button onClick={()=>setStep("relay")}
+                style={{background:"#fff7ed",border:"2px solid #fed7aa",borderRadius:12,padding:"16px 20px",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}}>
+                <div style={{fontWeight:800,fontSize:14,color:"#ea580c",marginBottom:4}}>🔁 引継ぎをお願いします</div>
+                <div style={{fontSize:12,color:"#64748b"}}>次の人にお願いします</div>
+              </button>
+            </div>
+          </>
+        )}
 
-        <div style={{marginBottom:20}}>
-          <label style={lbl}>ここまで完了しました（メール本文に入ります）</label>
-          <textarea style={{...inp,minHeight:80,resize:"vertical"}} value={memo} onChange={e=>setMemo(e.target.value)} placeholder="例：108号室の白図まで完了。209号室からお願いします。" />
-        </div>
+        {/* ステップ2：引き続き作業 */}
+        {step==="continue" && (
+          <>
+            <div style={{background:"#f0fdf4",border:"1px solid #86efac",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:"#15803d",fontWeight:700}}>✅ 引き続き作業します</div>
+            <div style={{marginBottom:14}}>
+              <label style={lbl}>自分の名前 *</label>
+              <select style={inp} value={myself} onChange={e=>setMyself(e.target.value)}>
+                <option value="">選択してください</option>
+                {assignees.map(a=><option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+            <div style={{marginBottom:20}}>
+              <label style={lbl}>進捗コメント</label>
+              <textarea style={{...inp,minHeight:72,resize:"vertical"}} value={memo} onChange={e=>setMemo(e.target.value)} placeholder="例：201まで完了。202から継続します。" />
+            </div>
+            <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+              <button onClick={()=>setStep("select")} style={{background:"#f1f5f9",color:"#475569",border:"none",borderRadius:10,padding:"10px 18px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>戻る</button>
+              <button onClick={()=>myself&&onContinue(myself,memo)} style={{background:myself?"linear-gradient(135deg,#22c55e,#16a34a)":"#cbd5e1",color:"white",border:"none",borderRadius:10,padding:"10px 22px",cursor:myself?"pointer":"default",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>保存する</button>
+            </div>
+          </>
+        )}
 
-        <div style={{display:"flex",gap:10,justifyContent:"flex-end",flexWrap:"wrap"}}>
-          <button onClick={onClose} style={{background:"#f1f5f9",color:"#475569",border:"none",borderRadius:10,padding:"10px 18px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>キャンセル</button>
-          <button onClick={()=>myself&&onContinue(myself,memo)}
-            style={{background:myself?"linear-gradient(135deg,#22c55e,#16a34a)":"#cbd5e1",color:"white",border:"none",borderRadius:10,padding:"10px 18px",cursor:myself?"pointer":"default",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
-            ✅ 引き続き作業します
-          </button>
-          <button onClick={()=>myself&&onRelay(myself,memo)}
-            style={{background:myself?"linear-gradient(135deg,#f97316,#ea580c)":"#cbd5e1",color:"white",border:"none",borderRadius:10,padding:"10px 18px",cursor:myself?"pointer":"default",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
-            📨 引継ぎをお願いします
-          </button>
-        </div>
+        {/* ステップ3：引継ぎ */}
+        {step==="relay" && (
+          <>
+            <div style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:"#92400e",fontWeight:700}}>🔁 引継ぎをお願いします</div>
+            <div style={{marginBottom:14}}>
+              <label style={lbl}>自分の名前 *</label>
+              <select style={inp} value={myself} onChange={e=>setMyself(e.target.value)}>
+                <option value="">選択してください</option>
+                {assignees.map(a=><option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+            <div style={{marginBottom:20}}>
+              <label style={lbl}>どこからお願いしたいか *</label>
+              <textarea style={{...inp,minHeight:72,resize:"vertical"}} value={memo} onChange={e=>setMemo(e.target.value)} placeholder="例：201まで完了。202からお願いします。" />
+            </div>
+            <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+              <button onClick={()=>setStep("select")} style={{background:"#f1f5f9",color:"#475569",border:"none",borderRadius:10,padding:"10px 18px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>戻る</button>
+              <button onClick={()=>myself&&onRelay(myself,memo)} style={{background:myself?"linear-gradient(135deg,#f97316,#ea580c)":"#cbd5e1",color:"white",border:"none",borderRadius:10,padding:"10px 22px",cursor:myself?"pointer":"default",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>送信する</button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -392,21 +429,25 @@ function RelayModal({ task, assignees, onRelay, onContinue, onClose }) {
 
 function MemoBlock({ memo, relayedFrom, relayedAt, assignee }) {
   const [open, setOpen] = useState(false);
+  const hasRelay = !!relayedFrom;
   return (
     <div style={{marginBottom:8}}>
       <div
-        onClick={e=>{e.stopPropagation();setOpen(v=>!v);}}
-        style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#92400e",lineHeight:1.5,cursor:"pointer",display:"flex",alignItems:"flex-start",gap:6}}
-        title="クリックで引継ぎ情報を表示">
+        onClick={e=>{e.stopPropagation();if(hasRelay)setOpen(v=>!v);}}
+        style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius: hasRelay&&open?"8px 8px 0 0":"8px",padding:"7px 10px",fontSize:12,color:"#92400e",lineHeight:1.5,cursor:hasRelay?"pointer":"default",display:"flex",alignItems:"flex-start",gap:6}}>
         <span>📝</span>
         <span style={{flex:1}}>{memo}</span>
-        {relayedFrom && <span style={{fontSize:10,color:"#b45309",flexShrink:0}}>{open?"▲":"▼"}</span>}
+        {hasRelay && <span style={{fontSize:10,color:"#b45309",flexShrink:0,marginTop:1}}>{open?"▲":"▼"}</span>}
       </div>
-      {open && relayedFrom && (
-        <div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:"0 0 8px 8px",padding:"7px 10px",fontSize:11,color:"#92400e",marginTop:-2}}>
-          <div style={{fontWeight:800,marginBottom:3}}>🔁 引継ぎ情報</div>
-          <div><span style={{fontWeight:700}}>{relayedFrom}</span> → <span style={{fontWeight:700}}>{assignee||"未定"}</span></div>
-          {relayedAt && <div style={{color:"#b45309",marginTop:2}}>{relayedAt}</div>}
+      {open && hasRelay && (
+        <div style={{background:"#fef3c7",border:"1px solid #fde68a",borderTop:"none",borderRadius:"0 0 8px 8px",padding:"8px 10px",fontSize:11,color:"#92400e"}}>
+          <div style={{fontWeight:800,marginBottom:4}}>🔁 引継ぎ情報</div>
+          <div style={{display:"flex",alignItems:"center",gap:4}}>
+            <span style={{fontWeight:700}}>{relayedFrom}</span>
+            <span style={{color:"#b45309"}}>→</span>
+            <span style={{fontWeight:700}}>{assignee||"未定"}</span>
+          </div>
+          {relayedAt && <div style={{color:"#b45309",marginTop:3}}>{relayedAt}</div>}
         </div>
       )}
     </div>
@@ -464,12 +505,6 @@ function TaskCard({ task, assignees, onDoubleClick, onDeleteClick, onStatusChang
       {task.memo && task.status==="作成・修正中" && (
         <MemoBlock memo={task.memo} relayedFrom={task.relayedFrom} relayedAt={task.relayedAt} assignee={task.assignee} />
       )}
-      {task.relayedFrom && <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:"5px 10px",fontSize:11,color:"#0369a1",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-        <span>🔁</span>
-        <span style={{fontWeight:800}}>{task.assignee||"未定"}</span>
-        <span style={{color:"#94a3b8"}}>{task.relayedAt}</span>
-        <span style={{fontWeight:700}}>引継ぎます</span>
-      </div>}
       {task.relayHistory && task.relayHistory.length > 0 && (
         <RelayHistoryBlock history={task.relayHistory} />
       )}
@@ -489,7 +524,7 @@ function TaskCard({ task, assignees, onDoubleClick, onDeleteClick, onStatusChang
           <button key={s} onClick={e=>{e.stopPropagation();onStatusChange(task.id,s);}} style={{fontSize:11,padding:"3px 10px",borderRadius:20,border:"none",cursor:"pointer",fontWeight:700,fontFamily:"inherit",transition:"all 0.15s",background:task.status===s?STATUS_META[s].bg:"#f8fafc",color:task.status===s?STATUS_META[s].text:"#94a3b8",outline:task.status===s?`2px solid ${STATUS_META[s].dot}`:"none"}}>{s}</button>
         ))}
         {task.status==="作成・修正中" && (
-          <button onClick={e=>{e.stopPropagation();onRelayClick(task);}} style={{marginLeft:"auto",fontSize:11,padding:"3px 11px",borderRadius:20,border:"none",cursor:"pointer",fontWeight:700,fontFamily:"inherit",background:"#fff7ed",color:"#ea580c",outline:"1px solid #fed7aa"}} onMouseEnter={e=>e.currentTarget.style.background="#ffedd5"} onMouseLeave={e=>e.currentTarget.style.background="#fff7ed"}>🔁 引継ぎ</button>
+          <button onClick={e=>{e.stopPropagation();onRelayClick(task);}} style={{marginLeft:"auto",fontSize:11,padding:"3px 11px",borderRadius:20,border:"none",cursor:"pointer",fontWeight:700,fontFamily:"inherit",background:"#f0fdf4",color:"#16a34a",outline:"1px solid #86efac"}} onMouseEnter={e=>e.currentTarget.style.background="#dcfce7"} onMouseLeave={e=>e.currentTarget.style.background="#f0fdf4"}>📊 進捗</button>
         )}
       </div>
     </div>
